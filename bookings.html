@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bookings - Campus Room Scheduler</title>
+  <!-- Compiled and minified CSS -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+  <!-- FullCalendar CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.15/index.global.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/@fullcalendar/daygrid@6.1.15/index.global.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/@fullcalendar/timegrid@6.1.15/index.global.min.css" rel="stylesheet">
+  <!-- Modern Theme System -->
+  <link rel="stylesheet" href="assets/css/theme.css">
+  <link rel="stylesheet" href="assets/css/components.css">
+  <style>
+    body {
+      font-family: "Lato", sans-serif;
+    }
+    
+    .calendar-container {
+      background-color: var(--bg-card);
+      border-radius: var(--radius-lg);
+      padding: var(--spacing-lg);
+      box-shadow: var(--shadow-md);
+      margin-top: var(--spacing-lg);
+    }
+    
+    /* FullCalendar theme integration */
+    .fc {
+      --fc-border-color: var(--border-color);
+      --fc-button-bg-color: var(--primary-color);
+      --fc-button-border-color: var(--primary-color);
+      --fc-button-hover-bg-color: var(--primary-dark);
+      --fc-button-hover-border-color: var(--primary-dark);
+      --fc-button-active-bg-color: var(--primary-dark);
+      --fc-button-active-border-color: var(--primary-dark);
+      --fc-event-bg-color: var(--primary-color);
+      --fc-event-border-color: var(--primary-color);
+      --fc-today-bg-color: rgba(var(--primary-rgb), 0.1);
+    }
+    
+    .fc-theme-standard td,
+    .fc-theme-standard th {
+      border-color: var(--border-color);
+    }
+    
+    .fc .fc-col-header-cell {
+      background-color: var(--bg-tertiary);
+    }
+    
+    .fc .fc-daygrid-day-number,
+    .fc .fc-col-header-cell-cushion {
+      color: var(--text-primary);
+    }
+    
+    .fc .fc-timegrid-slot-label {
+      color: var(--text-secondary);
+    }
+    
+    .fc-event {
+      cursor: pointer;
+    }
+    
+    .fc-event-title {
+      font-weight: 500;
+    }
+    
+    .booking-filters {
+      display: flex;
+      gap: var(--spacing-md);
+      margin-bottom: var(--spacing-lg);
+      flex-wrap: wrap;
+    }
+    
+    .filter-group {
+      flex: 1;
+      min-width: 200px;
+    }
+    
+    .fab {
+      position: fixed;
+      bottom: 80px;
+      right: var(--spacing-lg);
+      width: 56px;
+      height: 56px;
+      border-radius: var(--radius-full);
+      background-color: var(--primary-color);
+      color: var(--primary-text);
+      border: none;
+      box-shadow: var(--shadow-lg);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: var(--font-2xl);
+      transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+      z-index: var(--z-fixed);
+    }
+    
+    .fab:hover {
+      transform: scale(1.1);
+      box-shadow: var(--shadow-xl);
+    }
+    
+    @media (max-width: 768px) {
+      .booking-filters {
+        flex-direction: column;
+      }
+      
+      .fab {
+        bottom: 80px;
+        right: var(--spacing-md);
+      }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Navigation -->
+<nav>
+  <div class="nav-wrapper blue darken-2">
+    <a class="brand-logo center">Room Bookings</a>
+  </div>
+</nav>
+
+<!-- Sidebar Navigation -->
+<div id="SideBarNav" class="SideNav">
+  <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
+  <a href="mainWindow.html">Home</a>
+  <a href="Schedule.html">Schedule</a>
+  <a href="rooms.html">Rooms</a>
+  <a href="bookings.html" class="active">Bookings</a>
+  <a href="./scheduling/MyFirstSchedule.html">Full Calendar</a>
+  <a href="./calendar/Calendar.html">Day Calendar</a>
+</div>
+
+<!-- Main Content -->
+<div id="main" style="padding: 16px;">
+  <div class="container">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-lg);">
+      <span style="font-size:30px;cursor:pointer" onclick="openNav()">&#9776; Menu</span>
+      <h4 style="margin: 0;">Room Bookings</h4>
+      <div style="width: 30px;"></div>
+    </div>
+    
+    <!-- Filters -->
+    <div class="booking-filters">
+      <div class="filter-group">
+        <label for="room-filter">Filter by Room</label>
+        <select id="room-filter" class="browser-default">
+          <option value="">All Rooms</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label for="status-filter">Filter by Status</label>
+        <select id="status-filter" class="browser-default">
+          <option value="">All Statuses</option>
+          <option value="confirmed">Confirmed</option>
+          <option value="pending">Pending</option>
+          <option value="cancelled">Cancelled</option>
+        </select>
+      </div>
+    </div>
+    
+    <!-- Calendar -->
+    <div class="calendar-container">
+      <div id="calendar"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Add Booking FAB -->
+<button class="fab" onclick="openBookingModal()" title="Add Booking">
+  <i class="fa fa-plus"></i>
+</button>
+
+<!-- Add/Edit Booking Modal -->
+<div id="booking-modal" class="modal-backdrop">
+  <div class="modal" style="max-width: 600px;">
+    <div class="modal-header">
+      <h5 class="modal-title" id="modal-title">New Booking</h5>
+      <button class="modal-close" onclick="closeBookingModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <form id="booking-form">
+        <input type="hidden" id="booking-id">
+        
+        <div class="input-field">
+          <input type="text" id="booking-title" required>
+          <label for="booking-title">Event Title *</label>
+        </div>
+        
+        <div class="input-field">
+          <select id="booking-room" required class="browser-default">
+            <option value="" disabled selected>Select Room</option>
+          </select>
+          <label for="booking-room">Room *</label>
+        </div>
+        
+        <div class="row">
+          <div class="col s12 m6">
+            <div class="input-field">
+              <input type="datetime-local" id="booking-start" required>
+              <label for="booking-start">Start Time *</label>
+            </div>
+          </div>
+          <div class="col s12 m6">
+            <div class="input-field">
+              <input type="datetime-local" id="booking-end" required>
+              <label for="booking-end">End Time *</label>
+            </div>
+          </div>
+        </div>
+        
+        <div class="input-field">
+          <input type="text" id="booking-by" required>
+          <label for="booking-by">Booked By *</label>
+        </div>
+        
+        <div class="input-field">
+          <textarea id="booking-description" class="materialize-textarea"></textarea>
+          <label for="booking-description">Description</label>
+        </div>
+        
+        <!-- Conflict Warning -->
+        <div id="conflict-warning" style="display: none; padding: var(--spacing-md); background-color: var(--error-light); border-left: 4px solid var(--error-color); border-radius: var(--radius-md); margin-top: var(--spacing-md);">
+          <strong>⚠️ Conflict Detected</strong>
+          <p id="conflict-message" style="margin: var(--spacing-xs) 0 0 0;"></p>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeBookingModal()">Cancel</button>
+      <button class="btn-primary" id="save-booking-btn" onclick="saveBooking()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- View Booking Modal -->
+<div id="view-booking-modal" class="modal-backdrop">
+  <div class="modal" style="max-width: 500px;">
+    <div class="modal-header">
+      <h5 class="modal-title" id="view-modal-title"></h5>
+      <button class="modal-close" onclick="closeViewModal()">&times;</button>
+    </div>
+    <div class="modal-body" id="view-modal-body">
+      <!-- Booking details will be populated here -->
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeViewModal()">Close</button>
+      <button class="btn-primary" onclick="editCurrentBooking()">Edit</button>
+      <button class="btn-error" onclick="deleteCurrentBooking()">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- Compiled and minified JavaScript -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+<!-- FullCalendar -->
+<script src="https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.15/index.global.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@fullcalendar/daygrid@6.1.15/index.global.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@fullcalendar/timegrid@6.1.15/index.global.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@fullcalendar/interaction@6.1.15/index.global.min.js"></script>
+<!-- Theme management -->
+<script src="./renderer/theme.js"></script>
+<script src="./renderer/toast.js"></script>
+<script src="./renderer/navigation.js"></script>
+<!-- Booking management script -->
+<script src="./renderer/bookings.js"></script>
+
+</body>
+</html>

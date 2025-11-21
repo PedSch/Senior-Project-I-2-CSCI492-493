@@ -1,10 +1,17 @@
 
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<title> Main </title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Campus Room Scheduler - Main</title>
 <!-- Compiled and minified CSS -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+<!-- Font Awesome Icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+<!-- Modern Theme System -->
+<link rel="stylesheet" href="assets/css/theme.css">
+<link rel="stylesheet" href="assets/css/components.css">
 <style>
   
   body 
@@ -78,26 +85,25 @@ margin: auto;
 p
 {  
 font-size: 25px;  
-}  
+}
 
 </style>
 <!-- calendar icon -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 </head>
 <body>
-</div>
 
 <!-- logo -->
 <nav>
-<div class="nav-wrapper">
-<a class= "brand-logo center">Main Menu</a>
-</nav>
+<div class="nav-wrapper blue darken-2">
+<a class="brand-logo center">Campus Room Scheduler</a>
 </div>
-
-<!-- side bar nav -->
+</nav><!-- side bar nav -->
 <div id="SideBarNav" class="SideNav">
 <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a> 
 <a href="Schedule.html">Schedule Adjustments</a>
+<a href="rooms.html">Room Management</a>
+<a href="bookings.html">Room Bookings</a>
 <a href="./scheduling/MyFirstSchedule.html"> Full Scheduling Calendar </a>
 <a href="./calendar/Calendar.html"> Day Calendar</a>
 <a href="./time-todo/renderer/index.html">Time Sorter</a>
@@ -105,32 +111,82 @@ font-size: 25px;
 
 <!-- main menu sign  -->
 <div id="main">
-<p> Welcome to Digital Signage </p>
-<span style="font-size:30px;cursor:pointer" onclick="openNav()">&#9776; Sections</span>
+<div class="container">
+<h4>Welcome to Campus Room Scheduler</h4>
+<p class="grey-text">Modern room booking and scheduling for your campus</p>
+<p id="current-datetime" class="grey-text text-darken-1"></p>
+</div>
+<span style="font-size:30px;cursor:pointer" onclick="openNav()">&#9776; Menu</span>
 </div>
 
-<!-- calendar sign  -->
-<div class="container">  
-<p>Calendar:</p>
-<button style=" font-size:24px" onclick="window.location.href='./calendar/Calendar.html';"> <i class=" fa fa-calendar" style="font-size:180px;color:rgb(189, 89, 89)"></i>
-</button>
+<!-- Quick access buttons -->
+<div class="container" style="margin-top: 30px;">
+<div class="row">
+<div class="col s12 m4">
+<div class="card blue-grey darken-1 hoverable" style="cursor:pointer" onclick="navigateTo('schedule')">
+<div class="card-content white-text center">
+<i class="fa fa-calendar" style="font-size:48px"></i>
+<span class="card-title">Schedule</span>
+<p>Manage bookings</p>
+</div>
+</div>
+</div>
+<div class="col s12 m4">
+<div class="card blue-grey darken-1 hoverable" style="cursor:pointer" onclick="navigateTo('rooms')">
+<div class="card-content white-text center">
+<i class="fa fa-building" style="font-size:48px"></i>
+<span class="card-title">Rooms</span>
+<p>Manage rooms</p>
+</div>
+</div>
+</div>
+<div class="col s12 m4">
+<div class="card blue-grey darken-1 hoverable" style="cursor:pointer" onclick="navigateTo('bookings')">
+<div class="card-content white-text center">
+<i class="fa fa-calendar-check-o" style="font-size:48px"></i>
+<span class="card-title">Bookings</span>
+<p>View calendar</p>
+</div>
+</div>
+</div>
+</div>
+<div class="row">
+<div class="col s12 m4">
+<div class="card blue-grey darken-1 hoverable" style="cursor:pointer" onclick="navigateTo('calendar')">
+<div class="card-content white-text center">
+<i class="fa fa-calendar-o" style="font-size:48px"></i>
+<span class="card-title">Day View</span>
+<p>Daily calendar</p>
+</div>
+</div>
+</div>
+<div class="col s12 m4">
+<div class="card blue-grey darken-1 hoverable" style="cursor:pointer" onclick="navigateTo('full-calendar')">
+<div class="card-content white-text center">
+<i class="fa fa-calendar-plus-o" style="font-size:48px"></i>
+<span class="card-title">Full Calendar</span>
+<p>Complete view</p>
+</div>
+</div>
+</div>
+<div class="col s12 m4">
+<div class="card blue-grey darken-1 hoverable" style="cursor:pointer" onclick="navigateTo('time-sorter')">
+<div class="card-content white-text center">
+<i class="fa fa-clock-o" style="font-size:48px"></i>
+<span class="card-title">Time Sorter</span>
+<p>Organize time slots</p>
+</div>
+</div>
+</div>
+</div>
 </div>
 
-<!-- calendar sign  -->
-
-<script>
-const electron = require('electron');
-function openNav() 
-{
-document.getElementById("SideBarNav").style.width = "250px";
-document.getElementById("main").style.marginLeft = "250px";
-}
-function closeNav() 
-{
-document.getElementById("SideBarNav").style.width = "0";
-document.getElementById("main").style.marginLeft= "0";
-  }
-</script>
+<!-- Theme management -->
+<script src="./renderer/theme.js"></script>
+<script src="./renderer/toast.js"></script>
+<script src="./renderer/navigation.js"></script>
+<!-- External renderer script -->
+<script src="./renderer/mainWindow.js"></script>
 
 </body>
 </html>

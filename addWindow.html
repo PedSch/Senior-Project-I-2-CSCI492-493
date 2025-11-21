@@ -1,32 +1,75 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <title> Adding to Schedule </title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.100.2/css/materialize.min.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Add Schedule Item</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+  <!-- Modern Theme System -->
+  <link rel="stylesheet" href="assets/css/theme.css">
+  <link rel="stylesheet" href="assets/css/components.css">
+  <style>
+    body {
+      padding: 20px;
+      background-color: #fafafa;
+    }
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    h5 {
+      margin-top: 0;
+      color: #1976d2;
+    }
+  </style>
 </head>
 <body>
   <div class="container">
+    <h5>Add Schedule Item</h5>
     <form>
-      <div>
-        <label> Enter Name / Room Number </label>
-        <input type="text" id="item" autofocus>
+      <div class="input-field">
+        <input type="text" id="item" autofocus required>
+        <label for="item">Enter Name / Room Number</label>
       </div>
-      <button class="waves-effect waves-light btn" type="submit">Add Name </button>
+      <button class="waves-effect waves-light btn blue darken-2" type="submit">
+        <i class="material-icons left" style="display:none">add</i>
+        Add Item
+      </button>
     </form>
   </div>
   <script>
-    const electron = require('electron');
-    const {ipcRenderer} = electron;
-
+    // Modern secure IPC via context bridge
     const form = document.querySelector('form');
-    form.addEventListener('submit', submitForm);
+    const itemInput = document.querySelector('#item');
 
-    function submitForm(e){
+    form.addEventListener('submit', (e) => {
       e.preventDefault();
-      const item = document.querySelector('#item').value;
-      console.log(ipcRenderer);
-      ipcRenderer.send('item:add', item);
-    }
+      
+      const item = itemInput.value.trim();
+      
+      if (!item) {
+        alert('Please enter a name or room number');
+        return;
+      }
+      
+      // Send via secure IPC bridge
+      if (window.electronAPI) {
+        window.electronAPI.addItem(item);
+      } else {
+        console.error('Electron API not available');
+        alert('Unable to add item - application error');
+      }
+    });
+
+    // Focus input on load
+    window.addEventListener('DOMContentLoaded', () => {
+      itemInput.focus();
+    });
   </script>
+  <!-- Theme management -->
+  <script src="./renderer/theme.js"></script>
+  <script src="./renderer/toast.js"></script>
   </body>
 </html>

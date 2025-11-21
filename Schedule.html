@@ -1,11 +1,16 @@
 
 <!DOCTYPE html>
-<html> 
+<html lang="en">
 <head>
-    <title> Schedule  </title>
-      <!-- Compiled and minified CSS -->
-      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.100.2/css/materialize.min.css">
- <style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Schedule Management</title>
+<!-- Compiled and minified CSS -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+<!-- Modern Theme System -->
+<link rel="stylesheet" href="assets/css/theme.css">
+<link rel="stylesheet" href="assets/css/components.css">
+<style>
     body 
         {
         font-family: "Lato", sans-serif;
@@ -62,12 +67,15 @@
 </style>
 </head>
 <body>
- <nav>
- <div class="nav-wrapper">
- <a class= "brand-logo center">Schedule</a>
+<nav>
+<div class="nav-wrapper blue darken-2">
+<a class="brand-logo center">Schedule Management</a>
 </div>
 </nav>
+
+<div class="container">
 <ul></ul>
+</div>
 
 <div id="SideBarNav" class="SideNav">
     <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a> 
@@ -78,43 +86,15 @@
     </div>
     
     <div id="Schedule">
-
-    <span style="font-size:30px;cursor:pointer" onclick="openNav()">&#9776;</span>
+    <span style="font-size:30px;cursor:pointer;padding:16px" onclick="openNav()">&#9776; Menu</span>
     </div>
     
-    <script>
-      const electron = require('electron');
-      const {ipcRenderer} = electron;
-      const ul = document.querySelector('ul');
-  
-      //add item 
-      ipcRenderer.on('item:add', function(e, item)
-      {
-        ul.className = 'collection';
-        const li = document.createElement('li');
-        const itemText = document.createTextNode(item);
-        li.className = 'collection-item';
-        li.appendChild(itemText);
-        ul.appendChild(li);
-      });
-      //clear items 
-      ipcRenderer.on('item:clear', function()
-      {
-        ul.innerHTML = '';
-        ul.className = '';
-      });
-      //remove items
-      ul.addEventListener('dblclick', removeItem);
-  
-      function removeItem(e)
-      {
-        e.target.remove();
-       if(ul.children.length == 0)
-        {
-          ul.className = '';
-        }
-      }
-    </script>
+    <!-- Theme management -->
+    <script src="./renderer/theme.js"></script>
+    <script src="./renderer/toast.js"></script>
+    <script src="./renderer/navigation.js"></script>
+    <!-- External renderer script -->
+    <script src="./renderer/schedule.js"></script>
 <script>
     function openNav() 
     {
@@ -125,6 +105,10 @@
     {
     document.getElementById("SideBarNav").style.width = "0";
     document.getElementById("Schedule").style.marginLeft= "0";
+      }
+</script>
+</body>
+</html>
       }
 </script>
 </body>

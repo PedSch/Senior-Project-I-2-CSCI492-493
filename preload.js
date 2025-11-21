@@ -16,10 +16,31 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Room/Name operations
   onNames: (callback) => ipcRenderer.on('names', (event, names) => callback(names)),
   
+  // Room CRUD operations
+  getRooms: () => ipcRenderer.invoke('rooms:get'),
+  addRoom: (room) => ipcRenderer.invoke('rooms:add', room),
+  updateRoom: (id, updates) => ipcRenderer.invoke('rooms:update', id, updates),
+  deleteRoom: (id) => ipcRenderer.invoke('rooms:delete', id),
+  getRoomById: (id) => ipcRenderer.invoke('rooms:getById', id),
+  onRoomsUpdate: (callback) => ipcRenderer.on('rooms:updated', (event, rooms) => callback(rooms)),
+  
+  // Booking CRUD operations
+  getBookings: () => ipcRenderer.invoke('bookings:get'),
+  addBooking: (booking) => ipcRenderer.invoke('bookings:add', booking),
+  updateBooking: (id, updates) => ipcRenderer.invoke('bookings:update', id, updates),
+  deleteBooking: (id) => ipcRenderer.invoke('bookings:delete', id),
+  getBookingById: (id) => ipcRenderer.invoke('bookings:getById', id),
+  getBookingsByRoom: (roomId) => ipcRenderer.invoke('bookings:getByRoom', roomId),
+  checkRoomAvailability: (roomId, startTime, endTime, excludeBookingId) => 
+    ipcRenderer.invoke('bookings:checkAvailability', roomId, startTime, endTime, excludeBookingId),
+  onBookingsUpdate: (callback) => ipcRenderer.on('bookings:updated', (event, bookings) => callback(bookings)),
+  
   // Navigation
   openSchedule: () => ipcRenderer.send('open-schedule'),
   openCalendar: () => ipcRenderer.send('open-calendar'),
   openTimeSorter: () => ipcRenderer.send('open-time-sorter'),
+  openRooms: () => ipcRenderer.send('open-rooms'),
+  openBookings: () => ipcRenderer.send('open-bookings'),
   
   // Utility
   platform: process.platform,
