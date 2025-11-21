@@ -41,6 +41,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
   validateSession: (token) => ipcRenderer.invoke('auth:validate', token),
   logout: (token) => ipcRenderer.invoke('auth:logout', token),
   
+  // Recurrence operations
+  expandRecurrence: (rule, options) => ipcRenderer.invoke('recurrence:expand', { rule, ...options }),
+  createDailyRecurrence: (dtstart, options) => ipcRenderer.invoke('recurrence:createDaily', { dtstart, ...options }),
+  createWeeklyRecurrence: (dtstart, options) => ipcRenderer.invoke('recurrence:createWeekly', { dtstart, ...options }),
+  createMonthlyRecurrence: (dtstart, options) => ipcRenderer.invoke('recurrence:createMonthly', { dtstart, ...options }),
+  
   // Export/Import operations
   exportIcal: () => ipcRenderer.invoke('export:ical'),
   exportBackup: () => ipcRenderer.invoke('export:backup'),

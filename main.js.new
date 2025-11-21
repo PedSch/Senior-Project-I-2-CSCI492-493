@@ -662,6 +662,74 @@ ipcMain.handle('auth:logout', async (event, token) => {
   }
 });
 
+// ========== Recurrence IPC Handlers ==========
+
+/**
+ * Expand recurrence rule
+ */
+ipcMain.handle('recurrence:expand', async (event, { rule, windowStart, windowEnd, dtstart, duration }) => {
+  try {
+    const occurrences = recurrenceService.expand(rule, {
+      windowStart: windowStart ? new Date(windowStart) : undefined,
+      windowEnd: windowEnd ? new Date(windowEnd) : undefined,
+      dtstart: dtstart ? new Date(dtstart) : undefined,
+      duration
+    });
+    return { success: true, occurrences };
+  } catch (error) {
+    console.error('Recurrence expansion error:', error);
+    throw error;
+  }
+});
+
+/**
+ * Create daily recurrence rule
+ */
+ipcMain.handle('recurrence:createDaily', async (event, { dtstart, interval, until, count }) => {
+  try {
+    const rule = recurrenceService.createDaily(
+      new Date(dtstart),
+      { interval, until: until ? new Date(until) : undefined, count }
+    );
+    return { success: true, rule };
+  } catch (error) {
+    console.error('Create daily recurrence error:', error);
+    throw error;
+  }
+});
+
+/**
+ * Create weekly recurrence rule
+ */
+ipcMain.handle('recurrence:createWeekly', async (event, { dtstart, byweekday, interval, until, count }) => {
+  try {
+    const rule = recurrenceService.createWeekly(
+      new Date(dtstart),
+      { byweekday, interval, until: until ? new Date(until) : undefined, count }
+    );
+    return { success: true, rule };
+  } catch (error) {
+    console.error('Create weekly recurrence error:', error);
+    throw error;
+  }
+});
+
+/**
+ * Create monthly recurrence rule
+ */
+ipcMain.handle('recurrence:createMonthly', async (event, { dtstart, bymonthday, interval, until, count }) => {
+  try {
+    const rule = recurrenceService.createMonthly(
+      new Date(dtstart),
+      { bymonthday, interval, until: until ? new Date(until) : undefined, count }
+    );
+    return { success: true, rule };
+  } catch (error) {
+    console.error('Create monthly recurrence error:', error);
+    throw error;
+  }
+});
+
 // ========== Export IPC Handlers ==========
 
 /**
