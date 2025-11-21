@@ -1,350 +1,318 @@
 //the main process entry 
-'use strict'
+'use strict';
 
-const electron = require('electron');
+const { app, BrowserWindow, Menu, ipcMain } = require('electron');
 const path = require('path');
 const url = require('url');
-const { app,BrowserWindow, Menu, ipcMain} = electron;
-const Window = require('./Window')
-const DataStoreName = require('./DataStoreName');
+// const Window = require('./Window'); // Commented out - not used in current code
+// const DataStoreName = require('./DataStoreName'); // Will be refactored
 
-//set environment this more so client side 
-process.env.NODE_ENV = "development";
-//set environment this more so server side
-//process.env.NODE_ENV = "production";
+// Set environment
+const isDev = process.env.NODE_ENV !== 'production';
+process.env.NODE_ENV = isDev ? 'development' : 'production';
 
-//electron no rest error check 
-require('electron-reload')(__dirname,
-   {
-electron: path.join(__dirname, 'node_modules', '.bin', 'electron')
- });
+// Enable live reload in development
+if (isDev) {
+  try {
+    require('electron-reload')(__dirname, {
+      electron: path.join(__dirname, 'node_modules', '.bin', 'electron'),
+      hardResetMethod: 'exit',
+    });
+  } catch (err) {
+    console.log('Electron reload not available');
+  }
+}
 
-// create a new todo store name "Todos Main"
-const NameData = new DataStoreName({ name: 'Name main' })
+// Store instance (will be initialized with electron-store v11)
+// const NameData = new DataStoreName({ name: 'Name main' }); // Will refactor with new store
 
-// Listen for app to be ready
-//other main
+// Window references
 let mainWindow;
 let addWindow;
 let scheduleWindow;
 let calendarWindow;
 
-app.on('ready', function ()
-{
-  // Create new window
-  mainWindow = new BrowserWindow(
-    {
-     webPreferences:
-    {
-   nodeIntegration: true
-    }
-  });
-  // Load html in window
-  mainWindow .loadURL(url.format(
-    {
-    pathname: path.join(__dirname, 'mainWindow.html'),
-    protocol: 'file:',
-    slashes:true
-  }));
-  // Quit app when closed
-  mainWindow.on('closed', function()
-  {
-    app.quit();
-  });
+// App ready event - using modern syntax
+app.whenReady().then(() => {
+  createMainWindow();
+
   // Build menu from template
-const mainMenu = Menu.buildFromTemplate(mainMenuTemplate);
-  // Insert menu
+  const mainMenu = Menu.buildFromTemplate(mainMenuTemplate);
   Menu.setApplicationMenu(mainMenu);
-});
-function createScheduleWindow()
-{
-  // Create new window
-  scheduleWindow = new BrowserWindow(
-    {
-    webPreferences:
-    {
-   nodeIntegration: true
+
+  // On macOS, re-create window when dock icon is clicked
+  app.on('activate', () => {
+    if (BrowserWindow.getAllWindows().length === 0) {
+      createMainWindow();
     }
   });
-  // Load html in window
-  scheduleWindow.loadURL(url.format(
-    {
-    pathname: path.join(__dirname, 'Schedule.html'),
-    protocol: 'file:',
-    slashes:true
-    
-  }));
-  //initialize with names
-  scheduleWindow.once('show', () => 
-  {
-  scheduleWindow.webContents.send('names', NameData.names)
-  })
-  // Build menu from template
-const mainMenu = Menu.buildFromTemplate(mainMenuTemplate);
-  // Insert menu
-  Menu.setApplicationMenu(mainMenu);
-};
-// Handle add item window
-function createAddWindow()
-{
-  addWindow = new BrowserWindow(
-    {
-    width: 300,
-    height:250,
-    title:'Add Schedule Time ',
-    webPreferences:
-    {
-   nodeIntegration: true
-    }
-  });
-  addWindow.loadURL(url.format(
-    {
-    pathname: path.join(__dirname,'addWindow.html'),
-    protocol: 'file:',
-    slashes:true
-  }));
- // Handle garbage collection
- addWindow.on('close', function()
- {
-  addWindow = null;
-});
-}
-// Catch item:add
-ipcMain.on('item:add', function(e, item)
-{
-  //console.log(item);
-  mainWindow.webContents.send('item:add', item);
-  addWindow.close(); 
-  // Still have a reference to addWindow in memory. Need to reclaim memory (Grabage collection)
-  //addWindow = null;
 });
 
-//handles with calendar 
- //CALENDAR WINDOW fuction 
- function createCalendarWindow()
- {
-  // Create new window
-  calendarWindow = new BrowserWindow(
-    {
-      width:  800,
-      height: 950,
-    webPreferences:
-    {
-   nodeIntegration: true
+// Create main window function
+function createMainWindow() {
+  mainWindow = new BrowserWindow({
+    width: 1200,
+    height: 800,
+    webPreferences: {
+      nodeIntegration: true,
+      contextIsolation: false, // TODO: Enable in future for security
+      enableRemoteModule: false,
+    },
+  });
+
+  mainWindow.loadURL(
+    url.format({
+      pathname: path.join(__dirname, 'mainWindow.html'),
+      protocol: 'file:',
+      slashes: true,
+    })
+  );
+
+  // Open DevTools in development
+  if (isDev) {
+    mainWindow.webContents.openDevTools();
+  }
+
+  // Quit app when main window closed (except on macOS)
+  mainWindow.on('closed', () => {
+    mainWindow = null;
+    if (process.platform !== 'darwin') {
+      app.quit();
     }
   });
-  // Load html in window
-  calendarWindow.loadURL(url.format(
-    {
-    pathname: path.join('cal', 'Calendar.html'),
-    protocol: 'file:',
-    slashes:true,
-  }));
-  // Build menu from template
-const mainMenu = Menu.buildFromTemplate(mainMenuTemplate);
-//insert menu
-Menu.setApplicationMenu(mainMenu);
- } //end of createcalendar function 
+}
+// Create schedule window
+function createScheduleWindow() {
+  scheduleWindow = new BrowserWindow({
+    width: 1000,
+    height: 700,
+    webPreferences: {
+      nodeIntegration: true,
+      contextIsolation: false,
+    },
+  });
+
+  scheduleWindow.loadURL(
+    url.format({
+      pathname: path.join(__dirname, 'Schedule.html'),
+      protocol: 'file:',
+      slashes: true,
+    })
+  );
+
+  // Initialize with names when ready
+  scheduleWindow.webContents.on('did-finish-load', () => {
+    // scheduleWindow.webContents.send('names', NameData.names); // Will refactor
+  });
+
+  scheduleWindow.on('closed', () => {
+    scheduleWindow = null;
+  });
+}
+
+// Create add item window
+function createAddWindow() {
+  addWindow = new BrowserWindow({
+    width: 400,
+    height: 350,
+    title: 'Add Schedule Time',
+    parent: mainWindow,
+    modal: true,
+    webPreferences: {
+      nodeIntegration: true,
+      contextIsolation: false,
+    },
+  });
+
+  addWindow.loadURL(
+    url.format({
+      pathname: path.join(__dirname, 'addWindow.html'),
+      protocol: 'file:',
+      slashes: true,
+    })
+  );
+
+  addWindow.on('closed', () => {
+    addWindow = null;
+  });
+}
+// IPC: Catch item:add event
+ipcMain.on('item:add', (e, item) => {
+  if (mainWindow) {
+    mainWindow.webContents.send('item:add', item);
+  }
+  if (addWindow) {
+    addWindow.close();
+  }
+});
+
+// Create calendar window
+function createCalendarWindow() {
+  calendarWindow = new BrowserWindow({
+    width: 900,
+    height: 950,
+    webPreferences: {
+      nodeIntegration: true,
+      contextIsolation: false,
+    },
+  });
+
+  calendarWindow.loadURL(
+    url.format({
+      pathname: path.join(__dirname, 'calendar', 'Calendar.html'),
+      protocol: 'file:',
+      slashes: true,
+    })
+  );
+
+  calendarWindow.on('closed', () => {
+    calendarWindow = null;
+  });
+} 
 
 //menu settings 
 const mainMenuTemplate = [
   {
-    label: 'File', 
-    submenu:[
+    label: 'File',
+    submenu: [
       {
         label: 'Add Item',
-        click()
-        {
+        accelerator: 'CmdOrCtrl+N',
+        click() {
           createAddWindow();
-        }
+        },
       },
       {
         label: 'Clear Items',
-        click()
-        {
-          scheduleWindow.webContents.send('item:clear');
-          //scheduleWindow.webContents.send('roomNumber:clear');
-        }
+        click() {
+          if (scheduleWindow) {
+            scheduleWindow.webContents.send('item:clear');
+          }
+        },
       },
+      { type: 'separator' },
       {
         label: 'Quit',
-        //this will determine what kind of platform your own mac,pc etcc
-        //mac
-        //: is else
-        accelerator: process.platform == 'darwin'? 'Command+Q':
-        'Ctrl+Q',
-        click()
-        {
+        accelerator: process.platform === 'darwin' ? 'Command+Q' : 'Ctrl+Q',
+        click() {
           app.quit();
-        }
-      }
-    ] ,
-  }
+        },
+      },
+    ],
+  },
 ];
 
 //edit menu template 
-mainMenuTemplate.push(
-  {
+mainMenuTemplate.push({
   label: 'Edit',
-  submenu:[
-    {
-      role: 'undo'
-    },
-    {
-      role: 'redo'
-    },
-    {
-      type: 'separator'
-    },
-    {
-      role: 'cut'
-    },
-    {
-      role: 'copy'
-    },
-    {
-      role: 'paste'
-    },
-    {
-      role: 'pasteandmatchstyle'
-    },
-    {
-      role: 'delete'
-    },
-    {
-      role: 'selectall'
-    },
-    {
-      type: 'separator'
-    },
-    {
-      label: 'Speech',
-      submenu: [
-        {
-          role: 'startspeaking'
+  submenu: [
+    { role: 'undo' },
+    { role: 'redo' },
+    { type: 'separator' },
+    { role: 'cut' },
+    { role: 'copy' },
+    { role: 'paste' },
+    { role: 'selectall' },
+  ],
+});
+
+// View menu
+mainMenuTemplate.push({
+  label: 'View',
+  submenu: [
+    { role: 'reload' },
+    { role: 'forceReload' },
+    { type: 'separator' },
+    { role: 'resetZoom' },
+    { role: 'zoomIn' },
+    { role: 'zoomOut' },
+    { type: 'separator' },
+    { role: 'togglefullscreen' },
+  ],
+});
+// Add macOS specific menu
+if (process.platform === 'darwin') {
+  mainMenuTemplate.unshift({
+    label: app.name,
+    submenu: [
+      { role: 'about' },
+      { type: 'separator' },
+      { role: 'services' },
+      { type: 'separator' },
+      { role: 'hide' },
+      { role: 'hideOthers' },
+      { role: 'unhide' },
+      { type: 'separator' },
+      { role: 'quit' },
+    ],
+  });
+}
+
+// Add developer tools in development mode
+if (isDev) {
+  mainMenuTemplate.push({
+    label: 'Developer',
+    submenu: [
+      {
+        label: 'Toggle DevTools',
+        accelerator: process.platform === 'darwin' ? 'Command+I' : 'Ctrl+I',
+        click(item, focusedWindow) {
+          if (focusedWindow) {
+            focusedWindow.toggleDevTools();
+          }
         },
-        {
-          role: 'stopspeaking'
-        }
-      ]
-    }
-  ]
-})
-//view
-mainMenuTemplate.push(
-  {
-    label: 'View',
-    submenu: [
-      {
-        label: 'Reload',
-        accelerator: 'CmdOrCtrl+R',
-        click (item, focusedWindow) 
-        {
-          if (focusedWindow) focusedWindow.reload()
-        }  
-      }
-    ]
-  })
-//IF STATEMENT TO DETERMINE IF WE ARE ON A MAC 
-//IF MAC , ADD EMPTY OBJECT TO MENU
-if (process.platform == 'darwin')
-{
-  mainMenuTemplate.unshift(
-    {
-      label: item,
-    submenu: [
-      {
-        role: 'about'
       },
-      {
-        type: 'separator'
-      },
-      {
-        role: 'services',
-        submenu: []
-      },
-      {
-        type: 'separator'
-      },
-      {
-        role: 'hide'
-      },
-      {
-        role: 'hideothers'
-      },
-      {
-        role: 'unhide'
-      },
-      {
-        type: 'separator'
-      },
-      {
-        role: 'quit'
-      }
-    ]
-
-  }); //unshift is an array method and it adds on to begining of the array 
-
+      { role: 'reload' },
+    ],
+  });
 }
-//add developer tools item if not in production
-// a menu item is just an object
-if (process.env.NODE_ENV !== 'production')
-{
-  mainMenuTemplate.push(
+
+// Window menu
+mainMenuTemplate.push({
+  label: 'Window',
+  submenu: [
+    { role: 'minimize' },
+    { role: 'close' },
+    { type: 'separator' },
     {
-    label: 'Developer Tools',
-    submenu: [
-      {
-        label:'Toggle DeveTools',
-        accelerator: process.platform == 'darwin'? 'Command+I':
-        'Ctrl+I',
-        click(item,focusedWindow)
-        {
-          focusedWindow.toggleDevTools();
+      label: 'Schedule',
+      click() {
+        if (!scheduleWindow) {
+          createScheduleWindow();
+        } else {
+          scheduleWindow.focus();
         }
-      }, 
-      {
-        role: 'reload'
       },
-      {
-        type: 'separator'
+    },
+    {
+      label: 'Calendar',
+      click() {
+        if (!calendarWindow) {
+          createCalendarWindow();
+        } else {
+          calendarWindow.focus();
+        }
       },
-      {
-        role: 'resetzoom'
+    },
+  ],
+});
+
+// Help menu
+mainMenuTemplate.push({
+  label: 'Help',
+  submenu: [
+    {
+      label: 'Learn More',
+      click() {
+        require('electron').shell.openExternal('https://github.com/PedSch/Senior-Project-I-2-CSCI492-493');
       },
-      {
-        role: 'zoomin'
-      },
-      {
-        role: 'zoomout'
-      },
-      {
-        type: 'separator'
-      },
-      {
-        role: 'togglefullscreen'
-      }
-    ]
-  },
-  {
-    role: 'window',
-    submenu: [
-      {
-        role: 'minimize'
-      },
-      {
-        role: 'close'
-      }
-    ]
-  },
-  {
-    role: 'help',
-    submenu: [
-      {
-        label: 'Learn More',
-        click () { require('electron').shell.openExternal('http://electron.atom.io') }
-      }
-    ]
+    },
+  ],
+});
+
+// Quit when all windows are closed (except on macOS)
+app.on('window-all-closed', () => {
+  if (process.platform !== 'darwin') {
+    app.quit();
   }
-);
-}
+});
