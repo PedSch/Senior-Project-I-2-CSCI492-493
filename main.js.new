@@ -13,7 +13,11 @@ const path = require('path');
 const url = require('url');
 
 // Import custom modules
-const DataStore = require('./src/DataStore');
+const DB = require('./src/db');
+const AuthService = require('./src/auth');
+const RecurrenceService = require('./src/recurrence');
+const NotificationService = require('./src/notify');
+const { exportICal } = require('./src/exportCalendar');
 const { buildMenuTemplate, buildDeveloperMenu } = require('./src/MenuBuilder');
 
 // ========== Configuration ==========
@@ -32,9 +36,12 @@ if (isDev) {
   }
 }
 
-// ========== Data Store ==========
+// ========== Data Store & Services ==========
 
-const dataStore = new DataStore({ name: 'campus-scheduler' });
+const db = new DB();
+const authService = new AuthService(db);
+const recurrenceService = new RecurrenceService(db);
+const notificationService = new NotificationService();
 
 // ========== Window References ==========
 
@@ -236,6 +243,35 @@ function createRoomsWindow() {
 }
 
 /**
+ * Create the kiosk window
+ */
+function createKioskWindow() {
+  const kioskWindow = new BrowserWindow({
+    width: 1024,
+    height: 768,
+    title: 'Kiosk - Campus Scheduler',
+    fullscreen: true,
+    kiosk: true,
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true,
+      preload: path.join(__dirname, 'preload.js'),
+    },
+  });
+
+  kioskWindow.loadURL(
+    url.format({
+      pathname: path.join(__dirname, 'kiosk.html'),
+      protocol: 'file:',
+      slashes: true,
+    })
+  );
+
+  // Disable menu in kiosk mode
+  kioskWindow.setMenu(null);
+}
+
+/**
  * Create the bookings window
  */
 function createBookingsWindow() {
@@ -325,6 +361,7 @@ ipcMain.on('open-time-sorter', () => {
 });
 ipcMain.on('open-rooms', () => createRoomsWindow());
 ipcMain.on('open-bookings', () => createBookingsWindow());
+ipcMain.on('open-kiosk', () => createKioskWindow());
 
 // ========== Room IPC Handlers ==========
 
@@ -333,7 +370,7 @@ ipcMain.on('open-bookings', () => createBookingsWindow());
  */
 ipcMain.handle('rooms:get', async () => {
   try {
-    return dataStore.getRooms();
+    return db.getRooms();
   } catch (error) {
     console.error('Error getting rooms:', error);
     throw error;
@@ -345,12 +382,12 @@ ipcMain.handle('rooms:get', async () => {
  */
 ipcMain.handle('rooms:add', async (event, room) => {
   try {
-    dataStore.addRoom(room);
+    db.addRoom(room);
     
     // Notify all windows of update
     BrowserWindow.getAllWindows().forEach(win => {
       if (!win.isDestroyed()) {
-        win.webContents.send('rooms:updated', dataStore.getRooms());
+        win.webContents.send('rooms:updated', db.getRooms());
       }
     });
     
@@ -366,12 +403,12 @@ ipcMain.handle('rooms:add', async (event, room) => {
  */
 ipcMain.handle('rooms:update', async (event, id, updates) => {
   try {
-    dataStore.updateRoom(id, updates);
+    db.updateRoom(id, updates);
     
     // Notify all windows of update
     BrowserWindow.getAllWindows().forEach(win => {
       if (!win.isDestroyed()) {
-        win.webContents.send('rooms:updated', dataStore.getRooms());
+        win.webContents.send('rooms:updated', db.getRooms());
       }
     });
     
@@ -387,12 +424,12 @@ ipcMain.handle('rooms:update', async (event, id, updates) => {
  */
 ipcMain.handle('rooms:delete', async (event, id) => {
   try {
-    dataStore.deleteRoom(id);
+    db.deleteRoom(id);
     
     // Notify all windows of update
     BrowserWindow.getAllWindows().forEach(win => {
       if (!win.isDestroyed()) {
-        win.webContents.send('rooms:updated', dataStore.getRooms());
+        win.webContents.send('rooms:updated', db.getRooms());
       }
     });
     
@@ -408,7 +445,7 @@ ipcMain.handle('rooms:delete', async (event, id) => {
  */
 ipcMain.handle('rooms:getById', async (event, id) => {
   try {
-    return dataStore.getRoomById(id);
+    return db.getRoomById(id);
   } catch (error) {
     console.error('Error getting room by ID:', error);
     throw error;
@@ -422,7 +459,7 @@ ipcMain.handle('rooms:getById', async (event, id) => {
  */
 ipcMain.handle('bookings:get', async () => {
   try {
-    return dataStore.getBookings();
+    return db.getBookings();
   } catch (error) {
     console.error('Error getting bookings:', error);
     throw error;
@@ -435,7 +472,7 @@ ipcMain.handle('bookings:get', async () => {
 ipcMain.handle('bookings:add', async (event, booking) => {
   try {
     // Check availability first
-    const available = dataStore.isRoomAvailable(
+    const available = db.isRoomAvailable(
       booking.roomId,
       booking.startTime,
       booking.endTime
@@ -445,16 +482,30 @@ ipcMain.handle('bookings:add', async (event, booking) => {
       throw new Error('Room is not available for the selected time slot');
     }
     
-    dataStore.addBooking(booking);
+    const id = db.addBooking(booking);
+    
+    // Send confirmation email if configured
+    if (booking.email) {
+      try {
+        const room = db.getRoomById(booking.roomId);
+        await notificationService.sendBookingConfirmation({
+          to: booking.email,
+          subject: 'Booking Confirmation',
+          text: `Your booking for ${room?.name || 'room'} on ${new Date(booking.startTime).toLocaleString()} has been confirmed.`
+        });
+      } catch (emailErr) {
+        console.warn('Email notification failed:', emailErr.message);
+      }
+    }
     
     // Notify all windows of update
     BrowserWindow.getAllWindows().forEach(win => {
       if (!win.isDestroyed()) {
-        win.webContents.send('bookings:updated', dataStore.getBookings());
+        win.webContents.send('bookings:updated', db.getBookings());
       }
     });
     
-    return { success: true };
+    return { success: true, id };
   } catch (error) {
     console.error('Error adding booking:', error);
     throw error;
@@ -468,7 +519,7 @@ ipcMain.handle('bookings:update', async (event, id, updates) => {
   try {
     // If updating times, check availability
     if (updates.startTime || updates.endTime) {
-      const booking = dataStore.getBookingById(id);
+      const booking = db.getBookingById(id);
       if (!booking) {
         throw new Error('Booking not found');
       }
@@ -476,30 +527,20 @@ ipcMain.handle('bookings:update', async (event, id, updates) => {
       const startTime = updates.startTime || booking.startTime;
       const endTime = updates.endTime || booking.endTime;
       
-      // Check availability (excluding current booking)
-      const bookings = dataStore.getBookingsByRoom(booking.roomId);
-      const conflicts = bookings.filter(b => {
-        if (b.id === id) return false; // Exclude current booking
-        
-        const start = new Date(startTime);
-        const end = new Date(endTime);
-        const bStart = new Date(b.startTime);
-        const bEnd = new Date(b.endTime);
-        
-        return start < bEnd && end > bStart;
-      });
+      // Check availability using DB method
+      const available = db.isRoomAvailable(booking.roomId, startTime, endTime, id);
       
-      if (conflicts.length > 0) {
+      if (!available) {
         throw new Error('Time slot conflicts with another booking');
       }
     }
     
-    dataStore.updateBooking(id, updates);
+    db.updateBooking(id, updates);
     
     // Notify all windows of update
     BrowserWindow.getAllWindows().forEach(win => {
       if (!win.isDestroyed()) {
-        win.webContents.send('bookings:updated', dataStore.getBookings());
+        win.webContents.send('bookings:updated', db.getBookings());
       }
     });
     
@@ -515,12 +556,12 @@ ipcMain.handle('bookings:update', async (event, id, updates) => {
  */
 ipcMain.handle('bookings:delete', async (event, id) => {
   try {
-    dataStore.deleteBooking(id);
+    db.deleteBooking(id);
     
     // Notify all windows of update
     BrowserWindow.getAllWindows().forEach(win => {
       if (!win.isDestroyed()) {
-        win.webContents.send('bookings:updated', dataStore.getBookings());
+        win.webContents.send('bookings:updated', db.getBookings());
       }
     });
     
@@ -536,7 +577,7 @@ ipcMain.handle('bookings:delete', async (event, id) => {
  */
 ipcMain.handle('bookings:getById', async (event, id) => {
   try {
-    return dataStore.getBookingById(id);
+    return db.getBookingById(id);
   } catch (error) {
     console.error('Error getting booking by ID:', error);
     throw error;
@@ -548,7 +589,7 @@ ipcMain.handle('bookings:getById', async (event, id) => {
  */
 ipcMain.handle('bookings:getByRoom', async (event, roomId) => {
   try {
-    return dataStore.getBookingsByRoom(roomId);
+    return db.getBookingsByRoom(roomId);
   } catch (error) {
     console.error('Error getting bookings by room:', error);
     throw error;
@@ -560,26 +601,113 @@ ipcMain.handle('bookings:getByRoom', async (event, roomId) => {
  */
 ipcMain.handle('bookings:checkAvailability', async (event, roomId, startTime, endTime, excludeBookingId) => {
   try {
-    const bookings = dataStore.getBookingsByRoom(roomId);
-    
-    // Check for conflicts
-    const conflicts = bookings.filter(booking => {
-      if (excludeBookingId && booking.id === excludeBookingId) {
-        return false; // Exclude the booking being edited
-      }
-      
-      const start = new Date(startTime);
-      const end = new Date(endTime);
-      const bookingStart = new Date(booking.startTime);
-      const bookingEnd = new Date(booking.endTime);
-      
-      // Check for overlap
-      return start < bookingEnd && end > bookingStart;
-    });
-    
-    return conflicts.length === 0;
+    return db.isRoomAvailable(roomId, startTime, endTime, excludeBookingId);
   } catch (error) {
     console.error('Error checking availability:', error);
+    throw error;
+  }
+});
+
+// ========== Auth IPC Handlers ==========
+
+/**
+ * Create new user
+ */
+ipcMain.handle('auth:createUser', async (event, { username, password, role }) => {
+  try {
+    const user = await authService.createUser({ username, password, role });
+    return { success: true, user };
+  } catch (error) {
+    console.error('Error creating user:', error);
+    throw error;
+  }
+});
+
+/**
+ * Login
+ */
+ipcMain.handle('auth:login', async (event, { username, password }) => {
+  try {
+    const session = await authService.login(username, password);
+    return { success: true, session };
+  } catch (error) {
+    console.error('Login error:', error);
+    throw error;
+  }
+});
+
+/**
+ * Validate session token
+ */
+ipcMain.handle('auth:validate', async (event, token) => {
+  try {
+    const session = authService.validate(token);
+    return session ? { valid: true, session } : { valid: false };
+  } catch (error) {
+    console.error('Validation error:', error);
+    throw error;
+  }
+});
+
+/**
+ * Logout
+ */
+ipcMain.handle('auth:logout', async (event, token) => {
+  try {
+    authService.logout(token);
+    return { success: true };
+  } catch (error) {
+    console.error('Logout error:', error);
+    throw error;
+  }
+});
+
+// ========== Export IPC Handlers ==========
+
+/**
+ * Export calendar as iCal
+ */
+ipcMain.handle('export:ical', async () => {
+  try {
+    const icalString = exportICal();
+    return { success: true, data: icalString };
+  } catch (error) {
+    console.error('Export error:', error);
+    throw error;
+  }
+});
+
+/**
+ * Export all data (backup)
+ */
+ipcMain.handle('export:backup', async () => {
+  try {
+    const data = db.exportAll();
+    return { success: true, data };
+  } catch (error) {
+    console.error('Backup error:', error);
+    throw error;
+  }
+});
+
+/**
+ * Import data (restore)
+ */
+ipcMain.handle('import:restore', async (event, data) => {
+  try {
+    db.importAll(data);
+    
+    // Notify all windows
+    BrowserWindow.getAllWindows().forEach(win => {
+      if (!win.isDestroyed()) {
+        win.webContents.send('rooms:updated', db.getRooms());
+        win.webContents.send('bookings:updated', db.getBookings());
+      }
+    });
+    
+    return { success: true };
+  } catch (error) {
+    console.error('Restore error:', error);
     throw error;
   }
 });

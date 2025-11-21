@@ -50,6 +50,10 @@
     "@fullcalendar/interaction": "^6.1.15",
     "@fullcalendar/timegrid": "^6.1.15",
     "@fullcalendar/list": "^6.1.15",
+    "better-sqlite3": "^9.0.0",
+    "bcryptjs": "^2.4.3",
+    "nodemailer": "^6.9.11",
+    "ical-generator": "^7.0.0",
     "electron-store": "^11.0.2",
     "lodash": "^4.17.21"
   },

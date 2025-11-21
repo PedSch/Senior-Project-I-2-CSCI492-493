@@ -35,12 +35,24 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.invoke('bookings:checkAvailability', roomId, startTime, endTime, excludeBookingId),
   onBookingsUpdate: (callback) => ipcRenderer.on('bookings:updated', (event, bookings) => callback(bookings)),
   
+  // Auth operations
+  createUser: (username, password, role) => ipcRenderer.invoke('auth:createUser', { username, password, role }),
+  login: (username, password) => ipcRenderer.invoke('auth:login', { username, password }),
+  validateSession: (token) => ipcRenderer.invoke('auth:validate', token),
+  logout: (token) => ipcRenderer.invoke('auth:logout', token),
+  
+  // Export/Import operations
+  exportIcal: () => ipcRenderer.invoke('export:ical'),
+  exportBackup: () => ipcRenderer.invoke('export:backup'),
+  importRestore: (data) => ipcRenderer.invoke('import:restore', data),
+  
   // Navigation
   openSchedule: () => ipcRenderer.send('open-schedule'),
   openCalendar: () => ipcRenderer.send('open-calendar'),
   openTimeSorter: () => ipcRenderer.send('open-time-sorter'),
   openRooms: () => ipcRenderer.send('open-rooms'),
   openBookings: () => ipcRenderer.send('open-bookings'),
+  openKiosk: () => ipcRenderer.send('open-kiosk'),
   
   // Utility
   platform: process.platform,

@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kiosk - Campus Scheduler</title>
+  <link rel="stylesheet" href="assets/css/theme.css">
+  <link rel="stylesheet" href="assets/css/components.css">
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background: var(--background);
+      color: var(--text);
+      font-family: var(--font-body);
+    }
+    
+    .kiosk-container {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      padding: 2rem;
+    }
+    
+    .kiosk-header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    
+    .kiosk-header h1 {
+      font-size: 2.5rem;
+      margin: 0 0 0.5rem 0;
+      color: var(--primary);
+    }
+    
+    .kiosk-header .clock {
+      font-size: 1.5rem;
+      color: var(--text-light);
+    }
+    
+    .booking-form {
+      max-width: 600px;
+      margin: 0 auto;
+      width: 100%;
+    }
+    
+    .form-group {
+      margin-bottom: 1.5rem;
+    }
+    
+    .form-group label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 600;
+      font-size: 1.1rem;
+    }
+    
+    .form-group input,
+    .form-group select {
+      width: 100%;
+      padding: 1rem;
+      font-size: 1.1rem;
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      background: var(--surface);
+      color: var(--text);
+    }
+    
+    .btn-large {
+      width: 100%;
+      padding: 1.5rem;
+      font-size: 1.3rem;
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      margin-top: 1rem;
+    }
+    
+    .btn-large:hover {
+      background: var(--primary-dark);
+    }
+    
+    .btn-large:disabled {
+      background: var(--border);
+      cursor: not-allowed;
+    }
+    
+    .idle-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.95);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+    
+    .idle-overlay.active {
+      display: flex;
+    }
+    
+    .idle-message {
+      text-align: center;
+      color: white;
+    }
+    
+    .idle-message h2 {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+    }
+    
+    .idle-message p {
+      font-size: 1.5rem;
+    }
+    
+    .success-message {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: var(--success);
+      color: white;
+      padding: 2rem 3rem;
+      border-radius: 12px;
+      font-size: 1.5rem;
+      display: none;
+      z-index: 999;
+    }
+    
+    .success-message.active {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div class="kiosk-container">
+    <div class="kiosk-header">
+      <h1>Quick Room Booking</h1>
+      <div class="clock" id="clock"></div>
+    </div>
+    
+    <form class="booking-form" id="bookingForm">
+      <div class="form-group">
+        <label for="room">Select Room</label>
+        <select id="room" required>
+          <option value="">-- Choose a room --</option>
+        </select>
+      </div>
+      
+      <div class="form-group">
+        <label for="title">Meeting Title</label>
+        <input type="text" id="title" placeholder="e.g., Team Meeting" required>
+      </div>
+      
+      <div class="form-group">
+        <label for="bookedBy">Your Name</label>
+        <input type="text" id="bookedBy" placeholder="e.g., John Doe" required>
+      </div>
+      
+      <div class="form-group">
+        <label for="duration">Duration</label>
+        <select id="duration" required>
+          <option value="30">30 minutes</option>
+          <option value="60" selected>1 hour</option>
+          <option value="90">1.5 hours</option>
+          <option value="120">2 hours</option>
+        </select>
+      </div>
+      
+      <button type="submit" class="btn-large" id="submitBtn">Book Now</button>
+    </form>
+  </div>
+  
+  <div class="idle-overlay" id="idleOverlay">
+    <div class="idle-message">
+      <h2>Touch to Continue</h2>
+      <p>Kiosk will reset in <span id="resetTimer">30</span> seconds</p>
+    </div>
+  </div>
+  
+  <div class="success-message" id="successMessage">
+    ✓ Room Booked Successfully!
+  </div>
+  
+  <script src="renderer/kiosk.js"></script>
+</body>
+</html>
