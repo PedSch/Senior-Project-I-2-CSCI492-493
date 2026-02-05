@@ -1,0 +1,20 @@
+{
+  "name": "electron-todo",
+  "version": "1.0.0",
+  "description": "A simple todo app made with Electron - Tutorial Project",
+  "main": "mainTime.js",
+  "scripts": {
+    "start": "electron mainTime.js"
+  },
+  "keywords": ["electron", "todo", "tutorial"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "electron": "^33.2.0",
+    "electron-store": "^11.0.2",
+    "electron-reload": "^2.0.0-alpha.1"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

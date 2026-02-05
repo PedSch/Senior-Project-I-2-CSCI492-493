@@ -9,6 +9,9 @@ dist/
 release-builds/
 out/
 
+# Test coverage
+coverage/
+
 # OS files
 .DS_Store
 Thumbs.db
