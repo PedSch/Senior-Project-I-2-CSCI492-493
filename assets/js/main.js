@@ -12,7 +12,7 @@
 
 	$(function() {
 
-		var	$window = $(window),
+		const	$window = $(window),
 			$body = $('body'),
 			$sidebar = $('#sidebar');
 
@@ -58,13 +58,13 @@
 		// Sidebar.
 			if ($sidebar.length > 0) {
 
-				var $sidebar_a = $sidebar.find('a');
+				const $sidebar_a = $sidebar.find('a');
 
 				$sidebar_a
 					.addClass('scrolly')
 					.on('click', function() {
 
-						var $this = $(this);
+						const $this = $(this);
 
 						// External link? Bail.
 							if ($this.attr('href').charAt(0) != '#')
@@ -81,7 +81,7 @@
 					})
 					.each(function() {
 
-						var	$this = $(this),
+						const	$this = $(this),
 							id = $this.attr('href'),
 							$section = $(id);
 

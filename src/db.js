@@ -67,7 +67,7 @@ class DB {
   }
 
   addRoom(room) {
-    const id = room.id || `room-${Date.now()}`;
+    const id = room.id || `room-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
     this.db.prepare(`INSERT INTO rooms (id,name,capacity,building,floor,equipment) VALUES (?,?,?,?,?,?)`)   
       .run(id, room.name, room.capacity, room.building || '', room.floor || 1, (room.equipment || []).join(','));
     return id;
@@ -97,7 +97,7 @@ class DB {
   getBookingsByRoom(roomId) { return this.db.prepare('SELECT * FROM bookings WHERE roomId=?').all(roomId); }
 
   addBooking(b) {
-    const id = b.id || `booking-${Date.now()}`;
+    const id = b.id || `booking-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
     this.db.prepare(`INSERT INTO bookings (id,roomId,title,startTime,endTime,bookedBy,status,description,createdAt,recurrenceId)
       VALUES (?,?,?,?,?,?,?,?,?,?)`).run(
         id,

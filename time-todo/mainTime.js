@@ -20,7 +20,7 @@ const timesData = new DataStore({ name: 'Times Main' })
 function createindexWindow ()
 {
  // todo list window
- let indexWindow = new Window(
+ const indexWindow = new Window(
    {
     webPreferences:
     {
