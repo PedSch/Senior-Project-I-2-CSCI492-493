@@ -1,7 +1,7 @@
-var p = MindFusion.Scheduling;
+const p = MindFusion.Scheduling;
 
 //create a new calendar instance
-var calendar = new p.Calendar(document.getElementById("calendar"));
+const calendar = new p.Calendar(document.getElementById("calendar"));
 
 calendar.theme = "peach";
 
@@ -27,8 +27,8 @@ function handleSelection(sender, args)
 		//cancel the default behavior
 		args.cancel = true;
 		
-		var start = args.startTime;
-		var end = args.endTime;
+		let start = args.startTime;
+		const end = args.endTime;
 		
 		//clear all dates from the timetable
 		sender.timetableSettings.dates.clear();
