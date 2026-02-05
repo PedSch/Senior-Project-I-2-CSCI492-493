@@ -7,7 +7,7 @@
     "start": "electron mainTime.js"
   },
   "keywords": ["electron", "todo", "tutorial"],
-  "author": "",
+  "author": "Tutorial Project",
   "license": "MIT",
   "dependencies": {
     "electron": "^33.2.0",
